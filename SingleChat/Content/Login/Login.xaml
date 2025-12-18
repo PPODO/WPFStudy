@@ -1,0 +1,40 @@
+﻿<Page x:Class="SingleChat.Content.Login.Login"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:SingleChat.Content.Login"
+      mc:Ignorable="d" 
+      d:DesignHeight="500" d:DesignWidth="450"
+      Title="Login">
+
+    <Grid>
+        <TextBlock 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center"
+            Margin="0,0,0,75" 
+            TextWrapping="Wrap" 
+            Text="사용할 닉네임을 입력해주세요."
+            FontSize="20"/>
+        <TextBox 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center" 
+            Margin="0,0,0,0" 
+            TextWrapping="Wrap" 
+            Text="TextBox" 
+            Width="150"
+            HorizontalContentAlignment="Center"
+            FontSize="15"
+            MaxLength="10"
+            Name = "UserNameTextBox"/>
+        <Button 
+            Content="LOGIN" 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center"
+            Margin="0,100,0,0"
+            Width="100"
+            FontSize="15" 
+            Click="Login_Click"/>
+
+    </Grid>
+</Page>
