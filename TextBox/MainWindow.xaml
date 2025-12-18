@@ -1,0 +1,40 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TextBox"
+        xmlns:ViewModel="clr-namespace:TextBox.ViewModel" x:Class="TextBox.MainWindow"
+        mc:Ignorable="d"
+        Title="TextBox" Height="450" Width="800">
+    <Grid>
+        <Grid.DataContext>
+            <ViewModel:MainViewModel/>
+        </Grid.DataContext>
+        <TextBlock 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center" 
+            FontSize="25"><Run Text="값을 입력하면 제곱된 값이 출력됩니다."/></TextBlock>
+
+        <TextBox 
+            TextWrapping="Wrap"
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Top" 
+            Width="200" 
+            Height="35" 
+            Margin="0,250,0,0"
+            Text="{Binding Model.InputValue, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBlock 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center" 
+            FontSize="15" 
+            Margin="0,300,0,0"><Run Text="결과"/></TextBlock>
+        <TextBox 
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center" 
+            FontSize="15" 
+            Margin="0,350,0,0" 
+            Width="50" 
+            Text="{Binding Model.OutputValue, UpdateSourceTrigger=PropertyChanged}"/>
+    </Grid>
+</Window>
