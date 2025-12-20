@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using Chat.Net.NetManager;
+using Chat.Net.Protocol;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Chat.Content.SessionListPage
 {
@@ -32,6 +21,21 @@ namespace Chat.Content.SessionListPage
 
         #endregion
 
+        #region PacketAction
+
+        private void MSG_NOTICE_SESSION_LIST(BasicProtocol basicPacket)
+        {
+            var packet = (NOTICE_SESSION_LIST)basicPacket;
+
+            if (packet != null)
+            {
+
+
+            }
+        }
+
+        #endregion
+
         public SessionListPage()
         {
             InitializeComponent();
@@ -39,8 +43,10 @@ namespace Chat.Content.SessionListPage
             DataContext = this;
 
             _sessionList = new SessionList.SessionList();
+
+            NetManager.AddHandler(Protocol.MSG.MSG_NOTICE_SESSION_LIST, MSG_NOTICE_SESSION_LIST);
+        
+            
         }
-
-
     }
 }
