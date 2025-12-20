@@ -57,7 +57,10 @@ namespace SingleChat.Content.ChatRoom
         public void OnEnterKeyHit(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
+            {
                 Messages.AddMessage(LocalUserName, ChatTextBox.Text);
+                ChatTextBox.Text = "";
+            }
         }
     }
 }
