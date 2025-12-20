@@ -14,18 +14,22 @@ namespace Chat.Net.NetManager
         #region Variable
 
         private static TCPSimpleClient _tcpClient;
-        private static Queue<BasicProtocol> _packet_queue;
+        private static Queue<Tuple<Protocol.Protocol.MSG, byte[]>> _packet_queue;
 
-        private static Dictionary<Protocol.Protocol.MSG, List<Action<BasicProtocol>>> _packet_handler;
+        private static Dictionary<Protocol.Protocol.MSG, List<Action<byte[]>>> _packet_handler;
+
+        public static RequestModule RequestModule;
 
         #endregion
 
         static NetManager()
         {
-            _tcpClient = new TCPSimpleClient(System.Net.IPAddress.Parse("127.0.0.1"), 3550);
-            _packet_queue = new Queue<BasicProtocol>();
+            RequestModule = new RequestModule();
 
-            _packet_handler = new Dictionary<Protocol.Protocol.MSG, List<Action<BasicProtocol>>>();
+            _tcpClient = new TCPSimpleClient(System.Net.IPAddress.Parse("127.0.0.1"), 3550);
+            _packet_queue = new Queue<Tuple<Protocol.Protocol.MSG, byte[]>>();
+
+            _packet_handler = new Dictionary<Protocol.Protocol.MSG, List<Action<byte[]>>>();
         }
 
         public static void Connect()
@@ -33,11 +37,11 @@ namespace Chat.Net.NetManager
             _tcpClient.ConnectToAsync();
         }
 
-        public static void AddHandler(Protocol.Protocol.MSG msgType, Action<BasicProtocol> action)
+        public static void AddHandler(Protocol.Protocol.MSG msgType, Action<byte[]> action)
         {
             if (!_packet_handler.TryGetValue(msgType, out var handlers))
             {
-                List<Action<BasicProtocol>> newHandlerList = new List<Action<BasicProtocol>>();
+                List<Action<byte[]>> newHandlerList = new List<Action<byte[]>>();
                 newHandlerList.Add(action);
 
                 _packet_handler.Add(msgType, newHandlerList);
@@ -46,23 +50,28 @@ namespace Chat.Net.NetManager
                 handlers.Add(action);
         }
 
-        public static void AddMSG(BasicProtocol basicProtocol)
+        public static void AddMSG(Tuple<Protocol.Protocol.MSG, byte[]> queueData)
         {
-            _packet_queue.Enqueue(basicProtocol);
+            _packet_queue.Enqueue(queueData);
         }
 
         public static void Dispatch()
         {
             for (int i = 0; i < _packet_queue.Count; i++)
             {
-                var packet = _packet_queue.Dequeue();
+                var data = _packet_queue.Dequeue();
 
-                if (_packet_handler.TryGetValue(packet._messageType, out var handlers))
+                if (_packet_handler.TryGetValue(data.Item1, out var handlers))
                 {
                     foreach(var handler in handlers)
-                        handler.Invoke(packet);
+                        handler.Invoke(data.Item2);
                 }
             }
+        }
+
+        public static void Send(byte[] buffer)
+        {
+            _tcpClient.Send(buffer);
         }
     }
 }

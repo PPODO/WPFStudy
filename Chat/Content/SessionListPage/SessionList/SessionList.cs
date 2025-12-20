@@ -44,8 +44,6 @@ namespace Chat.Content.SessionListPage.SessionList
     {
         public SessionList()
         {
-            AddNewSession(1, "Hello", 1, 10);
-            AddNewSession(2, "3ello", 1, 10);
         }
 
         public void AddNewSession(UInt32 sessionID, string sessionName, UInt16 joinedUserCount, UInt16 maxUserCount)

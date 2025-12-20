@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Windows;
+using static Chat.Net.Protocol.Protocol;
 
 namespace Chat.Net
 {
@@ -70,12 +71,12 @@ namespace Chat.Net
 
             while (_remainBufferBytes > 0)
             {
-                var outPacket = PacketProcess(_receiveBuffer, _remainBufferBytes);
-                if (outPacket == null) break;
+                var outPacketBuffer = PacketProcess(_receiveBuffer, _remainBufferBytes, out var msgType, out var totalPacketSize);
+                if (outPacketBuffer == null) break;
 
-                _remainBufferBytes -= outPacket._totalPacketSize;
+                _remainBufferBytes -= totalPacketSize;
 
-                NetManager.NetManager.AddMSG(outPacket);
+                NetManager.NetManager.AddMSG(new Tuple<MSG, byte[]>(msgType, outPacketBuffer));
             }
 
             NetManager.NetManager.Dispatch();
@@ -83,36 +84,59 @@ namespace Chat.Net
             tcpClient.GetStream().BeginRead(_receiveBuffer, _remainBufferBytes, _receiveBuffer.Length, OnCompleteRead, tcpClient);
         }
 
+        private void OnCompleteWrite(IAsyncResult result)
+        {
+            var tcpClient = (TcpClient?)result.AsyncState;
+
+            if (tcpClient == null)
+            {
+                MessageBox.Show("WRITE FAILED - TCP CLIENT IS NULL");
+                return;
+            }
+
+            tcpClient.GetStream().EndWrite(result);
+        }
+
         #endregion
 
         #region PacketProcess
 
-        private Protocol.BasicProtocol? PacketProcess(byte[] buffer, int receivedBytes)
+        private unsafe byte[]? PacketProcess(byte[] buffer, int receivedBytes, out Protocol.Protocol.MSG msgType, out int totalPacketSize)
         {
-            int basicProtocolSize = Marshal.SizeOf<Protocol.BasicProtocol>();
+            msgType = MSG.MSG_NONE;
+            totalPacketSize = 0;
 
-            if (receivedBytes < basicProtocolSize)
+            const int MaxPayload = 1024;
+
+            int headerSize = Marshal.SizeOf<BasicHeader>();
+            if (receivedBytes < headerSize)
                 return null;
 
-            IntPtr basicPacketPtr = Marshal.AllocHGlobal(basicProtocolSize);
-            
-            Marshal.Copy(buffer, 0, basicPacketPtr, basicProtocolSize);
+            BasicHeader header;
+            fixed (byte* p = buffer)
+            {
+                header = Marshal.PtrToStructure<BasicHeader>((IntPtr)p);
+            }
 
-            Protocol.BasicProtocol basicPacket = Marshal.PtrToStructure<Protocol.BasicProtocol>(basicPacketPtr);
-
-            Marshal.FreeHGlobal(basicPacketPtr);
-
-            if (receivedBytes < basicPacket._totalPacketSize)
+            if (header._totalPacketSize < headerSize)
                 return null;
 
-            IntPtr packetPtr = Marshal.AllocHGlobal(basicPacket._totalPacketSize);
-            Marshal.Copy(buffer, 0, packetPtr, basicPacket._totalPacketSize);
+            int payloadSize = header._totalPacketSize - headerSize;
+            if (payloadSize < 0 || payloadSize > MaxPayload)
+                return null;
 
-            Protocol.BasicProtocol? packetObject = Protocol.Protocol.GetMarshalProtocolByMSG(basicPacket._messageType, packetPtr);
+            if (receivedBytes < header._totalPacketSize)
+                return null;
 
-            Marshal.FreeHGlobal(packetPtr);
+            byte[] returnBuffer = new byte[MaxPayload];
 
-            return packetObject;
+            if (payloadSize > 0)
+                Buffer.BlockCopy(buffer, headerSize, returnBuffer, 0, payloadSize);
+
+            msgType = header._messageType;
+            totalPacketSize = header._totalPacketSize;
+
+            return returnBuffer;
         }
 
         #endregion
@@ -134,6 +158,13 @@ namespace Chat.Net
             if (_connected) return;
 
             _tcpClient.BeginConnect(_ipAddress, _servicePort, OnCompleteConnect, _tcpClient);
+        }
+
+        public void Send(byte[] buffer)
+        {
+            if (!_connected) return;
+
+            _tcpClient.GetStream().BeginWrite(buffer, 0, buffer.Length, OnCompleteWrite, _tcpClient);
         }
     }
 }

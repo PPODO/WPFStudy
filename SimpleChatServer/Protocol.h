@@ -1,37 +1,84 @@
 #pragma once
 
-enum MSG
+enum class MessageType
 {
-    MSG_NONE = 0,
-    MSG_REQUEST_SESSION_LIST = 1,
-    MSG_NOTICE_SESSION_LIST = 2,
-    MSG_RESPONSE_SESSION_LIST = 3,
+	MSG_NONE = 0,
+	MSG_REQUEST_SESSION_LIST = 1,
+	MSG_NOTICE_SESSION_LIST = 2,
+	MSG_RESPONSE_SESSION_LIST = 3,
 
 };
 
 struct BasicProtocol
 {
 public:
-    MSG _messageType;
-    int _totalPacketSize;
+	MessageType _messageType;
+	int _totalPacketSize;
 
 public:
-    BasicProtocol(MSG messageType = MSG_NONE, int totalPacketSize = 0)
-    {
-        _messageType = messageType;
-        _totalPacketSize = totalPacketSize;
-    }
+	BasicProtocol(MessageType messageType = MessageType::MSG_NONE, int totalPacketSize = 0)
+	{
+		_messageType = messageType;
+		_totalPacketSize = totalPacketSize;
+	}
+
+};
+
+struct REQUEST_SESSION_LIST : BasicProtocol
+{
+public:
+
+
+public:
+	REQUEST_SESSION_LIST()
+		: BasicProtocol(MessageType::MSG_REQUEST_SESSION_LIST, sizeof(REQUEST_SESSION_LIST))
+	{
+	}
 
 };
 
 struct NOTICE_SESSION_LIST : BasicProtocol
 {
 public:
+	uint32_t session_id;
 
+	uint16_t joined_user_count;
+	uint16_t max_user_count;
 
+	uint16_t session_name_length;
+	std::vector<uint8_t> session_name;
 
 public:
+	NOTICE_SESSION_LIST()
+		: BasicProtocol(MessageType::MSG_NOTICE_SESSION_LIST, sizeof(NOTICE_SESSION_LIST))
+		, session_id(0)
+		, joined_user_count(0)
+		, max_user_count(0)
+		, session_name_length(0)
+		, session_name()
+	{
+	}
 
+public:
+	bool Parse(char* buffer)
+	{
+		if (!buffer || session_name.empty()) return false;
 
+		memcpy(buffer, &_messageType, sizeof(_messageType));
+		memcpy(buffer + sizeof(_messageType), &_totalPacketSize, sizeof(_totalPacketSize));
+
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize), &session_id, sizeof(session_id));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(session_id), &joined_user_count, sizeof(joined_user_count));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(session_id) + sizeof(joined_user_count), &max_user_count, sizeof(max_user_count));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(session_id) + sizeof(joined_user_count) + sizeof(max_user_count), &session_name_length, sizeof(session_name_length));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(session_id) + sizeof(joined_user_count) + sizeof(max_user_count) + sizeof(session_name_length), &session_name.front(), session_name.size());
+
+		return true;
+	}
+
+	uint32_t GetSize()
+	{
+		return sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(session_id) + sizeof(joined_user_count) + sizeof(max_user_count) + sizeof(session_name_length) + session_name.size();
+	}
 
 };

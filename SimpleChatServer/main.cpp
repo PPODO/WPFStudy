@@ -19,7 +19,7 @@ void RecvThreadFunction(SOCKET hListenSocket)
 
 	while (true)
 	{
-		const int recv_bytes = recv(hListenSocket, messageBuffer + remain_bytes, RECV_BUFF_SIZE - buffer_offset, 0);
+		const int recv_bytes = recv(hListenSocket, messageBuffer + remain_bytes, RECV_BUFF_SIZE - remain_bytes, 0);
 		if (recv_bytes <= 0)
 		{
 			std::cout << hListenSocket << " IS CLOSED!\n";
@@ -40,17 +40,31 @@ void RecvThreadFunction(SOCKET hListenSocket)
 			if (remain_bytes < basicProtocol->_totalPacketSize)
 				break;
 
+			char SendBuffer[RECV_BUFF_SIZE] = { "\0" };
 			switch (basicProtocol->_messageType)
 			{
-			case MSG::MSG_REQUEST_SESSION_LIST:
+			case MessageType::MSG_REQUEST_SESSION_LIST:
 			{
 				auto REQUEST_SESSION_LIST = reinterpret_cast<BasicProtocol*>(messageBuffer);
 				if (!REQUEST_SESSION_LIST)
 					goto error;
 
 				{
+					NOTICE_SESSION_LIST session;
 
+					session.session_id = 1;
+					session.joined_user_count = 5;
+					session.max_user_count = 10;
 
+					std::string session_name = "HelloWorld";
+					session.session_name.resize(session_name.length() + 1);
+					strcpy_s((char*)&session.session_name.front(), session_name.length() + 1, session_name.c_str());
+
+					session.session_name_length = session.session_name.size();
+					session._totalPacketSize = session.GetSize();
+
+					if (session.Parse(SendBuffer))
+						send(hListenSocket, SendBuffer, session.GetSize(), 0);
 				}
 			}
 			break;
@@ -69,7 +83,10 @@ close:
 
 	auto find = g_ClientContainer.find(hListenSocket);
 	if (find != g_ClientContainer.cend())
+	{
+		closesocket(find->first);
 		g_ClientContainer.erase(find);
+	}
 
 	g_ClientContainerMutex.unlock();
 }
