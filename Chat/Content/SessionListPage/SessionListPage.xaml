@@ -81,6 +81,7 @@
                 Height="50"
                 Margin="0,0,0,25"
                 Content="Create Chat Room"
-                FontSize="25"/>
+                FontSize="25"
+                Click="Create_Chat_Room_Click"/>
     </Grid>
 </Page>

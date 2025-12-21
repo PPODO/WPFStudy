@@ -23,9 +23,9 @@ namespace Chat.Content.SessionListPage
 
         #region PacketAction
 
-        private void MSG_NOTICE_SESSION_LIST(byte[] buffer)
+        private void MSG_NOTICE_SESSION(byte[] buffer)
         {
-            var message = Net.Protocol.NOTICE_SESSION_LIST.GetMessage(buffer);
+            var message = Net.Protocol.NOTICE_SESSION.GetMessage(buffer);
 
             _sessionList.AddNewSession(message._sessionID, message._sessionName, message._joinedUserCount, message._maxUserCount);
         }
@@ -40,9 +40,16 @@ namespace Chat.Content.SessionListPage
 
             _sessionList = new SessionList.SessionList();
 
-            NetManager.AddHandler(Protocol.MSG.MSG_NOTICE_SESSION_LIST, MSG_NOTICE_SESSION_LIST);
+            NetManager.AddHandler(Protocol.MSG.MSG_NOTICE_SESSION, MSG_NOTICE_SESSION);
 
             NetManager.RequestModule.REQUEST_SESSION_LIST();
+        }
+
+        private void Create_Chat_Room_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var childWindow = new NewSessionWindow.NewSessionWindow();
+
+            childWindow.ShowDialog();
         }
     }
 }

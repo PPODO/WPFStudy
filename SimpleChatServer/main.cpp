@@ -9,8 +9,33 @@
 
 #define RECV_BUFF_SIZE 2048
 
+struct ChatSessionInfo
+{
+public:
+	uint32_t session_unique_id;
+
+	std::string session_name;
+	
+	uint16_t joined_user_count;
+	uint16_t max_user_count;
+
+public:
+	ChatSessionInfo()
+		: session_unique_id()
+		, session_name()
+		, joined_user_count()
+		, max_user_count()
+	{
+	}
+
+};
+
 std::mutex g_ClientContainerMutex;
 std::map<SOCKET, int> g_ClientContainer;
+
+std::mutex g_ChatSessionMutex;
+std::atomic<uint32_t> g_ChatSessionIncreaseIndex;
+std::map<uint32_t, ChatSessionInfo> g_ChatSessionContainer;
 
 void RecvThreadFunction(SOCKET hListenSocket)
 {
@@ -50,21 +75,48 @@ void RecvThreadFunction(SOCKET hListenSocket)
 					goto error;
 
 				{
-					NOTICE_SESSION_LIST session;
+					NOTICE_SESSION session;
 
 					session.session_id = 1;
 					session.joined_user_count = 5;
 					session.max_user_count = 10;
-
-					std::string session_name = "HelloWorld";
-					session.session_name.resize(session_name.length() + 1);
-					strcpy_s((char*)&session.session_name.front(), session_name.length() + 1, session_name.c_str());
-
+					session.session_name = "HelloWorld";;
 					session.session_name_length = session.session_name.size();
 					session._totalPacketSize = session.GetSize();
 
 					if (session.Parse(SendBuffer))
 						send(hListenSocket, SendBuffer, session.GetSize(), 0);
+				}
+			}
+			break;
+			case MessageType::MSG_REQUEST_CREATE_SESSION:
+			{
+				auto packet = reinterpret_cast<REQUEST_CREATE_SESSION*>(messageBuffer);
+				if (!packet)
+					goto error;
+
+				g_ChatSessionMutex.lock();
+
+				ChatSessionInfo new_chat_session_info;
+				new_chat_session_info.session_unique_id = ++g_ChatSessionIncreaseIndex;
+				new_chat_session_info.joined_user_count = 1;
+				new_chat_session_info.session_name = packet->session_name;
+				new_chat_session_info.max_user_count = packet->max_user_count;
+
+				g_ChatSessionContainer.emplace(new_chat_session_info.session_unique_id, new_chat_session_info);
+
+				g_ChatSessionMutex.unlock();
+
+				// notice other clients
+				{
+
+
+				}
+
+				// response
+				{
+
+
 				}
 			}
 			break;

@@ -19,23 +19,24 @@ namespace Chat.Net.Protocol
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct NOTICE_SESSION_LIST
+    public struct NOTICE_SESSION
     {
         public UInt32 _sessionID;
         public UInt16 _joinedUserCount;
         public UInt16 _maxUserCount;
         public string _sessionName;
-        public static NOTICE_SESSION_LIST GetMessage(byte[] buffer)
+
+        public static NOTICE_SESSION GetMessage(byte[] buffer)
         {
             return Parse(buffer.AsSpan(), out _);
         }
         
-        public static NOTICE_SESSION_LIST Parse(ReadOnlySpan<byte> payload, out int bytesRead)
+        public static NOTICE_SESSION Parse(ReadOnlySpan<byte> payload, out int bytesRead)
         {
             bytesRead = 0;
 
             if (payload.Length < 10)
-                throw new ArgumentException("NOTICE_SESSION_LIST payload too short.");
+                throw new ArgumentException("NOTICE_SESSION  payload too short.");
 
             uint sessionId = BinaryPrimitives.ReadUInt32LittleEndian(payload.Slice(0, 4));
             ushort joined = BinaryPrimitives.ReadUInt16LittleEndian(payload.Slice(4, 2));
@@ -44,13 +45,13 @@ namespace Chat.Net.Protocol
 
             int headerSize = 10;
             if (payload.Length < headerSize + nameLen)
-                throw new ArgumentException("NOTICE_SESSION_LIST payload missing sessionName bytes.");
+                throw new ArgumentException("NOTICE_SESSION  payload missing sessionName bytes.");
 
             string name = Encoding.UTF8.GetString(payload.Slice(headerSize, nameLen));
 
             bytesRead = headerSize + nameLen;
             
-            return new NOTICE_SESSION_LIST
+            return new NOTICE_SESSION
             {
                 _sessionID = sessionId,
                 _joinedUserCount = joined,
@@ -60,14 +61,26 @@ namespace Chat.Net.Protocol
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct REQUEST_CREATE_SESSION
+    {
+        public UInt16 max_user_count;
+
+        public UInt16 session_name_length;
+        public string session_name;
+    }
+
     public class Protocol
     {
         public enum MSG : int
         {
             MSG_NONE = 0,
             MSG_REQUEST_SESSION_LIST = 1,
-            MSG_NOTICE_SESSION_LIST = 2,
+            MSG_NOTICE_SESSION = 2,
             MSG_RESPONSE_SESSION_LIST = 3,
+
+            MSG_REQUEST_CREATE_SESSION = 4,
+            MSG_RESPONSE_CREATE_SESSION = 5,
         }
     }
 }
