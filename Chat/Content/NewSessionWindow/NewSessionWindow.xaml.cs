@@ -1,4 +1,5 @@
 ﻿using Chat.Content.NewSessionWindow.Model;
+using Chat.Content.SessionListPage.SessionList;
 using Chat.Net.NetManager;
 using Chat.Net.Protocol;
 using System;
@@ -29,7 +30,18 @@ namespace Chat.Content.NewSessionWindow
         #region PacketAction
         private void MSG_RESPONSE_CREATE_SESSION(byte[] buffer)
         {
+            var message = Net.Protocol.RESPONSE_CREATE_SESSION.GetMessage(buffer);
 
+            if (message._feedback == 0)
+            {
+                var currentWindow = (MainWindow)Application.Current.MainWindow;
+
+                if (currentWindow != null)
+                {
+                    NetManager.RequestModule.REQUEST_JOIN_SESSION(message._session_id, currentWindow.UserNickname);
+                    this.Close();
+                }
+            }
         }
         #endregion
 
