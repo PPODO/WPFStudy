@@ -53,6 +53,10 @@ public:
 		, session_name()
 	{
 	}
+
+public:
+	size_t GetSize() const { return sizeof(BasicProtocol) + sizeof(uint32_t) + session_name.length(); }
+
 };
 
 struct NOTICE_SESSION : BasicProtocol

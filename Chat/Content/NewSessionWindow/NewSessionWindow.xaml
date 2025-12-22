@@ -25,7 +25,8 @@
             
             <TextBox Width="200"
                      FontSize="10"
-                     MaxLength="20"/>
+                     MaxLength="20"
+                     Name="SessionNameTextBox"/>
             
         </StackPanel>
 
@@ -41,23 +42,25 @@
 
             <Button Width="20"
                     Height="20"
-                    Content="O"
+                    Content="&lt;"
                     HorizontalContentAlignment="Center"
                     VerticalContentAlignment="Center"
                     FontSize="10"
-                    Margin="10,0,0,0"/>
+                    Margin="20,0,0,0"
+                    Click="Decrease_Click"/>
 
-            <TextBlock Text="MAX USER COUNT"
+            <TextBlock Text="{Binding MaxUserCount, UpdateSourceTrigger=PropertyChanged}"
                        FontSize="10"
                        VerticalAlignment="Center"
-                       Margin="10,0,10,0"/>
+                       Margin="50,0,50,0"/>
 
             <Button Width="20"
                     Height="20"
-                    Content="O"
+                    Content="&gt;"
                     HorizontalContentAlignment="Center"
                     VerticalContentAlignment="Center"
-                    FontSize="10"/>
+                    FontSize="10"
+                    Click="Increase_Click"/>
 
         </StackPanel>
         
@@ -66,13 +69,15 @@
                 Content="Create"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
-                Margin="0,0,125,10"/>
+                Margin="0,0,125,10"
+                Click="Create_Click"/>
 
         <Button Width="100"
                 Height="25"
                 Content="Cancel"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
-                Margin="125,0,0,10"/>
+                Margin="125,0,0,10"
+                Click="Cancel_Click"/>
     </Grid>
 </Window>

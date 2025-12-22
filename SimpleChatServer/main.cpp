@@ -100,20 +100,20 @@ void RecvThreadFunction(SOCKET hListenSocket)
 				ChatSessionInfo new_chat_session_info;
 				new_chat_session_info.session_unique_id = ++g_ChatSessionIncreaseIndex;
 				new_chat_session_info.joined_user_count = 1;
-				new_chat_session_info.session_name = packet->session_name;
+				new_chat_session_info.session_name = messageBuffer + packet->GetSize();
 				new_chat_session_info.max_user_count = packet->max_user_count;
 
 				g_ChatSessionContainer.emplace(new_chat_session_info.session_unique_id, new_chat_session_info);
 
 				g_ChatSessionMutex.unlock();
 
-				// notice other clients
+				// response
 				{
 
 
 				}
 
-				// response
+				// notice other clients
 				{
 
 

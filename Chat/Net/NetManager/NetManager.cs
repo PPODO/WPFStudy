@@ -1,4 +1,5 @@
 ﻿using Chat.Net.Protocol;
+using Chat.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace Chat.Net.NetManager
 {
@@ -64,7 +66,10 @@ namespace Chat.Net.NetManager
                 if (_packet_handler.TryGetValue(data.Item1, out var handlers))
                 {
                     foreach(var handler in handlers)
-                        handler.Invoke(data.Item2);
+                    {
+                        if (handler != null)
+                            DispatcherService.Invoke(handler, data.Item2);
+                    }
                 }
             }
         }
