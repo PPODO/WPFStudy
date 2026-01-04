@@ -231,8 +231,51 @@ close:
 	g_ClientContainerMutex.unlock();
 }
 
+#include <concurrent_priority_queue.h>
+
+struct Unit
+{
+public:
+	int val;
+
+public:
+	Unit(const int _val = 0)
+		: val(_val)
+	{
+	}
+
+};
+
+struct UnitCompareFunction
+{
+	bool operator()(const Unit& lhs, const Unit& rhs)
+	{
+		return lhs.val < rhs.val;
+	}
+};
+
 int main()
 {
+	{
+		Concurrency::concurrent_priority_queue<Unit, UnitCompareFunction> queue;
+
+		queue.push(1);
+		queue.push(5);
+		queue.push(3);
+		queue.push(7);
+		queue.push(10);
+
+		while (!queue.empty())
+		{
+			Unit unit;
+			queue.try_pop(unit);
+
+			std::cout << unit.val << std::endl;
+		}
+
+		return 0;
+	}
+
 	WSADATA winData;
 	WSAStartup(MAKEWORD(2, 2), &winData);
 
