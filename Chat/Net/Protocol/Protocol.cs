@@ -114,6 +114,7 @@ namespace Chat.Net.Protocol
     public struct RESPONSE_JOIN_SESSION
     {
         public UInt16 _feedback;
+        public UInt32 _session_id;
 
         public static RESPONSE_JOIN_SESSION GetMessage(byte[] buffer)
         {
@@ -128,12 +129,14 @@ namespace Chat.Net.Protocol
                 throw new ArgumentException("RESPONSE_JOIN_SESSION  payload too short.");
 
             ushort feedback = BinaryPrimitives.ReadUInt16LittleEndian(payload.Slice(0, 2));
+            uint sessionId = BinaryPrimitives.ReadUInt32LittleEndian(payload.Slice(2, 4));
 
             bytesRead = 6;
 
             return new RESPONSE_JOIN_SESSION
             {
-                _feedback = feedback
+                _feedback = feedback,
+                _session_id = sessionId
             };
         }
     }
@@ -172,6 +175,58 @@ namespace Chat.Net.Protocol
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct REQUEST_CHAT_MESSAGE
+    {
+        public UInt32 _session_id;
+
+        public UInt16 _chat_message_length;
+        public string _chat_message;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct NOTICE_CHAT_MESSAGE
+    {
+        public string _joined_user_nickname;
+        public string _chat_message;
+
+        public static NOTICE_CHAT_MESSAGE GetMessage(byte[] buffer)
+        {
+            return Parse(buffer.AsSpan(), out _);
+        }
+
+        public static NOTICE_CHAT_MESSAGE Parse(ReadOnlySpan<byte> payload, out int bytesRead)
+        {
+            bytesRead = 0;
+
+            if (payload.Length < 0)
+                throw new ArgumentException("NOTICE_CHAT_MESSAGE payload too short.");
+
+            ushort nameLen = BinaryPrimitives.ReadUInt16LittleEndian(payload.Slice(0, 2));
+
+            int headerSize = 2;
+            if (payload.Length < headerSize + nameLen)
+                throw new ArgumentException("NOTICE_CHAT_MESSAGE payload missing sessionName bytes.");
+
+            string sessionName = Encoding.UTF8.GetString(payload.Slice(headerSize, nameLen));
+
+            ushort chatLen = BinaryPrimitives.ReadUInt16LittleEndian(payload.Slice(nameLen + 2, 2));
+
+            if (payload.Length < headerSize + nameLen + chatLen)
+                throw new ArgumentException("NOTICE_CHAT_MESSAGE payload missing chat message bytes.");
+
+            string chatMessage = Encoding.UTF8.GetString(payload.Slice(headerSize + nameLen + 2, chatLen));
+
+            bytesRead = headerSize + nameLen + chatLen;
+
+            return new NOTICE_CHAT_MESSAGE
+            {
+                _joined_user_nickname = sessionName,
+                _chat_message = chatMessage
+            };
+        }
+    }
+
     public class Protocol
     {
         public enum MSG : int
@@ -191,6 +246,9 @@ namespace Chat.Net.Protocol
             MSG_REQUEST_LEAVE_SESSION = 9,
             MSG_RESPONSE_LEAVE_SESSION = 10,
             MSG_NOTICE_LEAVE_SESSION = 11,
+
+            MSG_REQUEST_CHAT_MESSAGE = 12,
+            MSG_NOTICE_CHAT_MESSAGE = 13,
         }
     }
 }

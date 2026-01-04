@@ -27,8 +27,6 @@ namespace Chat.Content.ChatRoomPage.Talk
     {
         public Talk()
         {
-            this.AddTalk(new Message("PPODO", "Hello"));
-            this.AddTalk(new Message("PPODO", "World"));
         }
 
         public void AddTalk(Message message)

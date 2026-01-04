@@ -46,7 +46,11 @@ namespace Chat.Content.SessionListPage
             {
                 var page = currentWindow.ChangePage<ChatRoomPage.ChatRoomPage>("ChatRoomPage");
 
-                page?.JoinProcess("[WELCOME] " + currentWindow.UserNickname + " JOIN!");
+                if (page != null)
+                {
+                    page.JoinProcess("[WELCOME] " + currentWindow.UserNickname + " JOIN!");
+                    page.SessionID = (UInt32)message._session_id;
+                }
             }
         }
 

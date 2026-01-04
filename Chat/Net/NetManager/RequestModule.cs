@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Markup;
 
 
 namespace Chat.Net.NetManager
@@ -30,7 +31,7 @@ namespace Chat.Net.NetManager
 
             const int headerSize = 8;
             int payloadSize = Marshal.SizeOf<Chat.Net.Protocol.REQUEST_CREATE_SESSION>();
-            int totalSize = headerSize + payloadSize;
+            int totalSize = headerSize + payloadSize + sessionName.Length;
 
             byte[] buffer = new byte[totalSize];
 
@@ -51,7 +52,7 @@ namespace Chat.Net.NetManager
 
             const int headerSize = 8;
             int payloadSize = Marshal.SizeOf<Chat.Net.Protocol.REQUEST_JOIN_SESSION>();
-            int totalSize = headerSize + payloadSize;
+            int totalSize = headerSize + payloadSize + joinedUserNickname.Length;
 
             byte[] buffer = new byte[totalSize];
 
@@ -66,5 +67,25 @@ namespace Chat.Net.NetManager
             NetManager.Send(buffer);
         }
 
+        public void REQUEST_CHAT_MESSAGE(UInt32 sessionID, string chatMessage)
+        {
+            byte[] chatBytes = Encoding.UTF8.GetBytes(chatMessage);
+
+            const int headerSize = 8;
+            int payloadSize = Marshal.SizeOf<Chat.Net.Protocol.REQUEST_CHAT_MESSAGE>();
+            int totalSize = headerSize + payloadSize + chatMessage.Length;
+
+            byte[] buffer = new byte[totalSize];
+
+            BitConverter.TryWriteBytes(buffer.AsSpan(0, 4), (int)Chat.Net.Protocol.Protocol.MSG.MSG_REQUEST_CHAT_MESSAGE);
+            BitConverter.TryWriteBytes(buffer.AsSpan(4, 4), totalSize);
+
+            BitConverter.TryWriteBytes(buffer.AsSpan(8, 4), sessionID);
+            BitConverter.TryWriteBytes(buffer.AsSpan(12, 2), (ushort)chatMessage.Length);
+
+            chatBytes.CopyTo(buffer.AsSpan(14));
+
+            NetManager.Send(buffer);
+        }
     }
 }

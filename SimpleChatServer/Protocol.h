@@ -18,6 +18,8 @@ enum class MessageType
 	MSG_RESPONSE_LEAVE_SESSION = 10,
 	MSG_NOTICE_LEAVE_SESSION = 11,
 
+	MSG_REQUEST_CHAT_MESSAGE = 12,
+	MSG_NOTICE_CHAT_MESSAGE = 13,
 };
 
 struct BasicProtocol
@@ -175,11 +177,13 @@ struct RESPONSE_JOIN_SESSION : BasicProtocol
 {
 public:
 	uint16_t feedback;
+	uint32_t session_id;
 
 public:
 	RESPONSE_JOIN_SESSION()
 		: BasicProtocol(MessageType::MSG_RESPONSE_JOIN_SESSION, sizeof(RESPONSE_JOIN_SESSION))
 		, feedback()
+		, session_id()
 	{
 	}
 
@@ -192,13 +196,14 @@ public:
 		memcpy(buffer + sizeof(_messageType), &_totalPacketSize, sizeof(_totalPacketSize));
 
 		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize), &feedback, sizeof(feedback));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(feedback), &session_id, sizeof(session_id));
 
 		return true;
 	}
 
 	uint32_t GetSize()
 	{
-		return sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(feedback);
+		return sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(feedback) + sizeof(session_id);
 	}
 
 };
@@ -232,5 +237,68 @@ public:
 	}
 
 	size_t GetSize() const { return sizeof(BasicProtocol) + sizeof(uint16_t) + joined_user_nickname.length(); }
+
+};
+
+struct REQUEST_CHAT_MESSAGE : public BasicProtocol
+{
+public:
+	uint32_t session_id;
+
+	uint16_t chat_message_length;
+	std::string chat_message;
+
+public:
+	REQUEST_CHAT_MESSAGE()
+		: BasicProtocol(MessageType::MSG_REQUEST_CHAT_MESSAGE, sizeof(REQUEST_CHAT_MESSAGE))
+		, session_id()
+		, chat_message_length()
+		, chat_message()
+	{
+	}
+
+public:
+	size_t GetSize() const { return sizeof(BasicProtocol) + sizeof(uint32_t) + sizeof(uint16_t) + chat_message.length(); }
+
+};
+
+struct NOTICE_CHAT_MESSAGE : public BasicProtocol
+{
+public:
+	uint16_t joined_user_nickname_length;
+	std::string joined_user_nickname;
+
+	uint16_t chat_message_length;
+	std::string chat_message;
+
+public:
+	NOTICE_CHAT_MESSAGE()
+		: BasicProtocol(MessageType::MSG_NOTICE_CHAT_MESSAGE, sizeof(NOTICE_CHAT_MESSAGE))
+		, joined_user_nickname_length()
+		, joined_user_nickname()
+		, chat_message_length()
+		, chat_message()
+	{
+	}
+
+public:
+	bool Parse(char* buffer)
+	{
+		if (!buffer) return false;
+
+		memcpy(buffer, &_messageType, sizeof(_messageType));
+		memcpy(buffer + sizeof(_messageType), &_totalPacketSize, sizeof(_totalPacketSize));
+
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize), &joined_user_nickname_length, sizeof(joined_user_nickname_length));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(joined_user_nickname_length), joined_user_nickname.c_str(), joined_user_nickname.length());
+
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(joined_user_nickname_length) + joined_user_nickname.length(), &chat_message_length, sizeof(chat_message_length));
+		memcpy(buffer + sizeof(_messageType) + sizeof(_totalPacketSize) + sizeof(joined_user_nickname_length) + joined_user_nickname.length() + sizeof(chat_message_length), chat_message.c_str(), chat_message.length());
+
+		return true;
+	}
+
+	size_t GetSize() const { return sizeof(BasicProtocol) + sizeof(uint16_t) + joined_user_nickname.length() + sizeof(uint16_t) + chat_message.length(); }
+
 
 };

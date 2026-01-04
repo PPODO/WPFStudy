@@ -23,6 +23,8 @@ namespace Chat.Content.ChatRoomPage
 
         Talk.Talk messages;
 
+        private UInt32 session_id;
+
         #endregion
 
         #region Property
@@ -30,6 +32,12 @@ namespace Chat.Content.ChatRoomPage
         public Talk.Talk Messages
         {
             get => messages;
+        }
+
+        public UInt32 SessionID
+        {
+            get => session_id;
+            set => session_id = value;
         }
 
         #endregion
@@ -42,6 +50,14 @@ namespace Chat.Content.ChatRoomPage
             if (message._joined_user_nickname.Length > 0)
                 JoinProcess("[WELCOME] " + message._joined_user_nickname + " JOIN!");
         }
+        private void MSG_NOTICE_CHAT_MESSAGE(byte[] buffer)
+        {
+            var message = Net.Protocol.NOTICE_CHAT_MESSAGE.GetMessage(buffer);
+
+            if (message._joined_user_nickname.Length > 0 && message._chat_message.Length > 0)
+                Messages.Add(new Talk.Message(message._joined_user_nickname, message._chat_message));
+        }
+
         #endregion
 
         public ChatRoomPage()
@@ -53,11 +69,21 @@ namespace Chat.Content.ChatRoomPage
             DataContext = this;
 
             NetManager.AddHandler(Protocol.MSG.MSG_NOTICE_JOIN_SESSION, MSG_NOTICE_JOIN_SESSION);
+            NetManager.AddHandler(Protocol.MSG.MSG_NOTICE_CHAT_MESSAGE, MSG_NOTICE_CHAT_MESSAGE);
         }
 
         public void JoinProcess(string joinedUserNickname)
         {
             Messages.Add(new Talk.Message("SERVER", joinedUserNickname));
+        }
+
+        private void ChatTextBoxKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                NetManager.RequestModule.REQUEST_CHAT_MESSAGE(session_id, ChatTextBox.Text);
+                ChatTextBox.Text = "";
+            }
         }
     }
 }

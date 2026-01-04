@@ -201,10 +201,55 @@ void RecvThreadFunction(SOCKET hListenSocket)
 					RESPONSE_JOIN_SESSION response;
 
 					response.feedback = (!succ);
+					response.session_id = packet->session_id;
 					response._totalPacketSize = response.GetSize();
 
 					if (response.Parse(SendBuffer))
 						send(hListenSocket, SendBuffer, response.GetSize(), 0);
+				}
+			}
+			break;
+			case MessageType::MSG_REQUEST_CHAT_MESSAGE:
+			{
+				auto packet = reinterpret_cast<REQUEST_CHAT_MESSAGE*>(messageBuffer);
+				if (!packet)
+					goto error;
+
+				const std::string chat = messageBuffer + packet->GetSize();
+
+				g_ChatSessionMutex.lock();
+
+				const auto find = g_ChatSessionContainer.find(packet->session_id);
+				if (find == g_ChatSessionContainer.cend())
+				{
+					goto close;
+					g_ChatSessionMutex.unlock();
+				}
+
+				g_ChatSessionMutex.unlock();
+
+				const auto client_find = std::find_if(
+					find->second.joined_user_socket_handler.begin(), find->second.joined_user_socket_handler.end(),
+					[&hListenSocket](const SOCKET rhs) { return rhs == hListenSocket; });
+
+				if (client_find == find->second.joined_user_socket_handler.cend())
+					goto close;
+
+				{
+					NOTICE_CHAT_MESSAGE notice_packet;
+
+					notice_packet.joined_user_nickname_length = 3;
+					notice_packet.joined_user_nickname = "YYY"; // todo
+
+					notice_packet.chat_message_length = chat.length();
+					notice_packet.chat_message = chat;
+					notice_packet._totalPacketSize = notice_packet.GetSize();
+
+					if (notice_packet.Parse(SendBuffer))
+					{
+						for (const auto& client : find->second.joined_user_socket_handler)
+							send(client, SendBuffer, notice_packet.GetSize(), 0);
+					}
 				}
 			}
 			break;
@@ -256,26 +301,6 @@ struct UnitCompareFunction
 
 int main()
 {
-	{
-		Concurrency::concurrent_priority_queue<Unit, UnitCompareFunction> queue;
-
-		queue.push(1);
-		queue.push(5);
-		queue.push(3);
-		queue.push(7);
-		queue.push(10);
-
-		while (!queue.empty())
-		{
-			Unit unit;
-			queue.try_pop(unit);
-
-			std::cout << unit.val << std::endl;
-		}
-
-		return 0;
-	}
-
 	WSADATA winData;
 	WSAStartup(MAKEWORD(2, 2), &winData);
 
